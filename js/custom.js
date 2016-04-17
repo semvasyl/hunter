@@ -7,10 +7,12 @@ socket = new WebSocket('wss://ws.binaryws.com/websockets/v3');
 isAuth=0
 isMonitoring=0
 serverTime=0
+startbuy=0
 contract_type="CALL"
 proposalID=""
 paramsSaved=0
 tradeStart=0
+prybutokVidsotok=0
 
 currentPrice=0
 
@@ -22,6 +24,8 @@ currency= "USD"
 duration= 60
 duration_unit= "m"
 symbol= "frxEURUSD"
+dateStart= new Date();
+dateEnd= new Date();
 
 
 
@@ -41,14 +45,15 @@ socket.onmessage = function(event) {
             var tmp_amount=incomingMessage.proposal.ask_price
             var tmp_payout=incomingMessage.proposal.payout
             proposalID=incomingMessage.proposal.id
-            $("#prybutokVidsotok").text(((tmp_amount/100)*(tmp_payout-tmp_amount)))
+            prybutokVidsotok=((tmp_amount/100)*(tmp_payout-tmp_amount))
+            $("#prybutokVidsotok").text(prybutokVidsotok)
         }
     }
 
     if (typeof incomingMessage.tick != 'undefined') {
 
       if ( typeof incomingMessage.tick.quote != 'undefined') {
-        console.log("Price write")
+        console.log("Price recieved")
         $("#cinaPotochna").text(incomingMessage.tick.quote)
         serverTime=incomingMessage.tick.epoch;
         currentPrice=parseFloat(incomingMessage.tick.quote)
@@ -58,9 +63,18 @@ socket.onmessage = function(event) {
         
 
         if (price>0) {
-            if ((currentPrice>=min_lim)&&(currentPrice<=max_lim)) {
+            /*if (currentPrice>=min_lim) {
+                console.log("min -- diff=" + (currentPrice-min_lim) );
+            };
+            if (currentPrice<=max_lim) {
+                console.log("max -- diff=" + (max_lim - currentPrice ) );  
+            };*/
+
+            console.log("=====Work with price=====")
+            if (((currentPrice>=min_lim) || (currentPrice<=max_lim))) {
                 $("#logArea").text(serverTime + " :: Виявив ціну. Починай купувати" + "\n" + $("#logArea").text())
                 $("#indicatorDone").html('<img id="picDone" src="img/Done.png"  width="250" height="250" class="img-responsive" alt="Generic placeholder thumbnail">')
+                buy_contract()
 
             }else{
                 $("#logArea").text(serverTime + " :: cina= " + incomingMessage.tick.quote + "\n" + $("#logArea").text())
@@ -81,6 +95,7 @@ socket.onmessage = function(event) {
 
     if (typeof incomingMessage.error != 'undefined') {
         console.log(incomingMessage.error.code + "::::" +incomingMessage.error.message)
+        err=incomingMessage.error
     }
 
 
@@ -97,7 +112,7 @@ function auth () {
     var outMsg=JSON.stringify({
             "authorize": "eDryu5dgXAmdFVN"
         });
-    console.log("auth Call")
+    console.log("auth Call");
     socket.send(outMsg, function ack(error) {
           showMessage("ERROR===" + incomingMessage + "===== " + error); 
         });
@@ -113,6 +128,8 @@ function getPrognoz () {
         "basis": basis,
         "contract_type": contract_type,
         "currency": currency,
+        "date_start" : dateStart,
+        // "date_expire" : dateEnd,
         "duration": duration,
         "duration_unit": duration_unit,
         "symbol": symbol
@@ -142,7 +159,7 @@ function SaveParameters () {
     basis= "stake"
     contract_type= contract_type
     currency= "USD"
-    duration= 60
+    duration= 5
     duration_unit= "m"
     symbol= $("#symbol").val()
 
@@ -151,6 +168,7 @@ function SaveParameters () {
 }
 
 function MonitoringPrice () {
+        console.log("start MonitoringPrice function")
         if (isAuth==0) {
             auth();
         };
@@ -158,10 +176,10 @@ function MonitoringPrice () {
             return;
         };
         isMonitoring=1
-        console.log("click buttonMonitoringPrice")
         outgoingMessage1=JSON.stringify({
         
-            "ticks": "frxEURUSD"
+            // "ticks": "frxEURUSD"
+            "ticks": "R_50"
         
         });
         socket.send(outgoingMessage1, function ack(error) {
@@ -190,6 +208,73 @@ function StartTrade () {
     $("#cinaZadana").text(price)
     $("#picRunned").attr("src","img/ok.png")
 }
+
+
+  function CalcTime(min){
+    var i=min;
+    var result=[];
+    do{
+    if ((i%5)===0) {
+        result.start=min;
+        result.end=i;
+        result.diff=i-min;
+        if (result.diff>=1) {
+            return result.diff;
+        }
+    }
+      i+=1;
+    }
+    while (i<60);
+    
+  }
+
+  function buy_contract () {
+        /*if (startbuy==1) {
+            return;
+        };*/
+        startbuy=1
+        intervals=0
+        curent_unix=Math.floor(Date.now()/1000);
+        // curent_time = new Date((curent_unix*1000));
+        //current server time + 5 seconds for create request to buy contract
+        curent_time = new Date((serverTime+5)*1000);
+        minuts=curent_time.getMinutes();  
+        intervals=CalcTime(minuts);
+        duration=5;
+        planedStart=new Date(curent_time.getFullYear(),curent_time.getMonth(),curent_time.getDate(),curent_time.getHours(),curent_time.getMinutes(),curent_time.getSeconds());
+        //planedEnd=new Date(curent_time.getFullYear(),curent_time.getMonth(),curent_time.getDate(),curent_time.getHours(),intervals);
+        dateStart=Math.floor(planedStart/1000);
+        //dateEnd=Math.floor(planedEnd/1000);
+        getPrognoz();
+        buyContractMessage = JSON.stringify({
+              "buy": proposalID,
+              "price": 0,
+              "parameters":{
+                    "amount": amount,
+                    "basis": basis,
+                    "contract_type": contract_type,
+                    "currency": currency,
+                    "date_start" : dateStart,
+                    // "date_expire" : dateEnd,
+                    "duration": duration,
+                    "duration_unit": duration_unit,
+                    "symbol": symbol
+              }
+            });
+        if (prybutokVidsotok>=75) {            
+            console.log("sent buyContractMessage")
+            /*socket.send(buyContractMessage, function ack(error) {
+                  showMessage("ERROR===" + incomingMessage + "===== " + error); 
+                });*/
+        };
+
+
+
+  }
+
+
+
+
 
 $( document ).ready(function() {
 
