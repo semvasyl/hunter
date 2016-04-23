@@ -72,9 +72,11 @@ socket.onmessage = function(event) {
 
         currentPrice=parseFloat(incomingMessage.tick.quote)
         
-        max_lim=price+0.002
-        min_lim=price-0.002
+        // max_lim=price+0.002
+        // min_lim=price-0.002
         
+        max_lim=price+0.5
+        min_lim=price-0.5
 
         if (price>0) {
             /*if (currentPrice>=min_lim) {
@@ -104,6 +106,11 @@ socket.onmessage = function(event) {
         $("#infoBalance").text(incomingMessage.authorize.balance)
         $("#infoCurrency").text(incomingMessage.authorize.currency)
         $("#picConnect").attr("src","img/ok.png")
+    }
+
+    if (typeof incomingMessage.buy != 'undefined') {
+        console.log("Баланс= " + incomingMessage.buy.balance_after + " Прогноз=" + incomingMessage.buy.longcode)
+
     }
 
 
@@ -143,17 +150,33 @@ function getPrognoz () {
     //current server time + 5 seconds for create request to buy contract
     var op=(parseInt(serverTime)+4)*1000;
     curent_time = new Date(op);
-    //minuts=curent_time.getMinutes();  
-    // intervals=CalcTime(minuts);
+    minuts=curent_time.getMinutes();  
+    intervals=CalcTime(minuts);
+    if (duration!=0) {
+        switch (duration_unit){
+            case 's':
+                intervals=intervals*(duration/60);
+                break;
+            case 'm': 
+                intervals=intervals*duration;
+                break;
+            case 'h':
+                intervals=intervals*(duration*60);
+                break;
+            default:
+                break;
+        }
+    };
     // duration=5;
     //planedStart=new Date(curent_time.getFullYear(),curent_time.getMonth(),curent_time.getDate(),curent_time.getHours(),curent_time.getMinutes(),curent_time.getSeconds());
-    //planedEnd=new Date(curent_time.getFullYear(),curent_time.getMonth(),curent_time.getDate(),curent_time.getHours(),intervals);
+    planedEnd=new Date(curent_time.getFullYear(),curent_time.getMonth(),curent_time.getDate(),curent_time.getHours(),intervals);
     dateStart=(Date.parse(curent_time))/1000;
-    /*console.log("------ start -------")
-    console.log("server time + 4 sec=    " + op)
-    console.log("converted date=    " + curent_time )
-    console.log("dateStart=     " + dateStart)
-    console.log("serverTime=" +     serverTime)*/
+    dateEnd=(Date.parse(planedEnd))/1000;
+    // console.log("------ start -------")
+    // console.log("server time + 4 sec=    " + op)
+    // console.log("converted date=    " + curent_time )
+    // console.log("dateEnd=     " + dateEnd)
+    // console.log("serverTime=" +     serverTime)
     //dateStart=Math.floor(planedStart);
     //dateEnd=Math.floor(planedEnd/1000);
     //console.log("prorok Call")
@@ -163,10 +186,10 @@ function getPrognoz () {
         "basis": basis,
         "contract_type": contract_type,
         "currency": currency,
-        "date_start" : dateStart,
-        // "date_expire" : dateEnd,
-        "duration": duration,
-        "duration_unit": duration_unit,
+        // "date_start" : dateStart,
+        "date_expiry" : dateEnd,
+        // "duration": duration,
+        // "duration_unit": duration_unit,
         "symbol": symbol
       });
     socket.send(outgoingMessage, function ack(error) {
@@ -250,16 +273,23 @@ function StartTrade () {
   function CalcTime(min){
     var i=min;
     var result=[];
+
+    if ((min%5)===0) {
+        i+=1;
+    };
+
     do{
-    if ((i%5)===0) {
-        result.start=min;
-        result.end=i;
-        result.diff=i-min;
-        if (result.diff>=1) {
-            return result.diff;
+
+
+        if ((i%5)===0) {
+            result.start=min;
+            result.end=i;
+            result.diff=i-min;
+            if (result.diff>=1) {
+                return result.diff;
+            }
         }
-    }
-      i+=1;
+        i+=1;
     }
     while (i<60);
     
@@ -275,19 +305,20 @@ function StartTrade () {
         //getPrognoz();
         buyContractMessage = JSON.stringify({
               "buy": proposalID,
-              //"price": 0,
-              "price": currentPrice,
-              "parameters":{
-                    "amount": amount,
-                    "basis": basis,
-                    "contract_type": contract_type,
-                    "currency": currency,
-                    "date_start" : dateStart,
-                    // "date_expire" : dateEnd,
-                    "duration": duration,
-                    "duration_unit": duration_unit,
-                    "symbol": symbol
-              }
+              // "buy": 1,
+              "price": 0,
+              // "price": currentPrice,
+              // "parameters":{
+              //       "amount": amount,
+              //       "basis": basis,
+              //       "contract_type": contract_type,
+              //       "currency": currency,
+              //       // "date_start" : dateStart,
+              //       "date_expiry" : dateEnd,
+              //       // "duration": duration,
+              //       // "duration_unit": duration_unit,
+              //       "symbol": symbol
+              // }
             });
         if (prybutokVidsotok>=0.75) { 
             startbuy=1
@@ -295,12 +326,13 @@ function StartTrade () {
                 $("#monitorEnd").text("Завершено: " + Date(serverTime))
                 monitorEnd=1
             };
+            $("title").text("[ok] Автоматична ставка")
             $("#textDone").text("Покупку здійснено! Оновіть сторінку для нового контракту")
             $("#indicatorDone").html('<img id="picDone" src="img/Done.png"  width="250" height="250" class="img-responsive" alt="Generic placeholder thumbnail">')         
-            alert("ГОТОВО! Можете переглянути деталі роботи")
-            /*socket.send(buyContractMessage, function ack(error) {
+            //alert("ГОТОВО! Можете переглянути деталі роботи")
+            socket.send(buyContractMessage, function ack(error) {
                   showMessage("ERROR===" + incomingMessage + "===== " + error); 
-                });*/
+                });
         };
 
 
