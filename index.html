@@ -106,6 +106,14 @@
                   <label for="amount">Ставка</label>
                   <input type="text" class="form-control" id="amount" placeholder="">
                 </div>
+                <div class="form-group">
+                  <label for="duration_value">Тривалість (число)</label>
+                  <input type="text" class="form-control" id="duration_value" value="5">
+                </div>
+                <div class="form-group">
+                  <label for="duration_unit">Тривалість (s - seconds | m - minutes | h - hours)</label>
+                  <input type="text" class="form-control" id="duration_unit" value="m">
+                </div>
                 <div class="radio">
                   <label>
                     <input type="radio" name="contractType" id="contractType1" value="CALL" checked>
@@ -119,20 +127,9 @@
                   </label>
                 </div>
 
-                <div class="form-group">
-                    <label class="col-sm-5 control-label">Результати прогнозу</label>
-                    <div class="col-sm-7">
-                      <p class="form-control-static"><span id="prybutokPrognoz"></span> </p>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label class="col-sm-5 control-label">Можливий прибуток</label>
-                    <div class="col-sm-7">
-                      <p class="form-control-static"><span id="prybutokVidsotok"></span> %</p>
-                    </div>
-                </div>              
+              
                 <a class="btn btn-default" id="buttonAccept" href="#" role="button">Затвердити</a>
-                <a class="btn btn-default" id="buttonPrognoz" href="#" role="button">Прогноз</a>
+                <!-- <a class="btn btn-default" id="buttonPrognoz" href="#" role="button">Прогноз</a> -->
                 <a class="btn btn-default" id="buttonStart" href="#" role="button">СТАРТ</a>
               </form>              
             </div>
@@ -150,13 +147,47 @@
                       <p class="form-control-static">[ <span id="cinaPotochna"></span> ]</p>
                     </div>
                 </div>
+                <hr/>
+
+                <div class="form-group">
+                  <label class="" for="prybutokInvestovano">Інвестовано</label>
+                  <div class="input-group">
+                    <div class="input-group-addon">$</div>
+                    <input type="text" class="form-control" id="prybutokInvestovano" placeholder="Тільки читання">
+                    <div class="input-group-addon">.00</div>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="" for="prybutokPrognozVal">Можливий дохід</label>
+                  <div class="input-group">
+                    <div class="input-group-addon">$</div>
+                    <input type="text" class="form-control" id="prybutokPrognozVal" placeholder="Тільки читання">
+                    <div class="input-group-addon">.00</div>
+                  </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-5 control-label">Результати прогнозу</label>
+                    <div class="col-sm-7">
+                      <p class="form-control-static"><span id="prybutokPrognoz"></span> </p>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-5 control-label">Можливий прибуток</label>
+                    <div class="col-sm-7">
+                      <p class="form-control-static"><span id="prybutokVidsotok"></span> %</p>
+                    </div>
+                </div>
                 <div class="form-group">
                   <label for="loger">Журнал роботи</label>
                   <textarea id="logArea"class="form-control" rows="3"></textarea>
-                </div>
-                  <a class="btn btn-default" href="#" role="button">Очистити</a>
+                </div>                
+                  <!-- <a class="btn btn-default" href="#" role="button">Очистити</a> -->
               </form> 
               <br/>             
+              <div id="monitorStart"></div>
+              <div id="monitorEnd"></div>
+              <div id="textDone"></div>
+              <br/>
               <div id="indicatorDone"></div>
             </div>
           </div>

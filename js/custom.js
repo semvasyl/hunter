@@ -13,6 +13,9 @@ proposalID=""
 paramsSaved=0
 tradeStart=0
 prybutokVidsotok=0
+monitorStart=0
+monitorEnd=0
+
 
 currentPrice=0
 
@@ -40,26 +43,37 @@ socket.onmessage = function(event) {
 
     if (typeof incomingMessage.proposal != 'undefined') {
         if (typeof incomingMessage.proposal.longcode != 'undefined') {  
-            console.log("==========prybutok calculate==============")
+            //console.log("==========prybutok calculate==============")
+            $("#prybutokInvestovano").val(incomingMessage.proposal.ask_price)
+            $("#prybutokPrognozVal").val(incomingMessage.proposal.payout)
             $("#prybutokPrognoz").text(incomingMessage.proposal.longcode)
-            var tmp_amount=incomingMessage.proposal.ask_price
-            var tmp_payout=incomingMessage.proposal.payout
+            var tmp_amount=incomingMessage.proposal.ask_price //вкладено
+            var tmp_payout=incomingMessage.proposal.payout //прибуток
             proposalID=incomingMessage.proposal.id
-            prybutokVidsotok=((tmp_amount/100)*(tmp_payout-tmp_amount))
+            //prybutokVidsotok=((tmp_amount/100)*(tmp_payout-tmp_amount))
+            prybutokVidsotok=(tmp_payout-tmp_amount)/tmp_amount
             $("#prybutokVidsotok").text(prybutokVidsotok)
+            buy_contract();
         }
     }
 
     if (typeof incomingMessage.tick != 'undefined') {
 
       if ( typeof incomingMessage.tick.quote != 'undefined') {
-        console.log("Price recieved")
+        //console.log("Price recieved")
         $("#cinaPotochna").text(incomingMessage.tick.quote)
         serverTime=incomingMessage.tick.epoch;
+
+        if (monitorStart===0) {
+            $("#monitorStart").text("Розпочато: " + Date(serverTime))
+            monitorStart=1
+        };
+
+
         currentPrice=parseFloat(incomingMessage.tick.quote)
         
-        max_lim=price+0.00005
-        min_lim=price-0.00005
+        max_lim=price+0.002
+        min_lim=price-0.002
         
 
         if (price>0) {
@@ -70,14 +84,14 @@ socket.onmessage = function(event) {
                 console.log("max -- diff=" + (max_lim - currentPrice ) );  
             };*/
 
-            console.log("=====Work with price=====")
-            if (((currentPrice>=min_lim) || (currentPrice<=max_lim))) {
-                $("#logArea").text(serverTime + " :: Виявив ціну. Починай купувати" + "\n" + $("#logArea").text())
-                $("#indicatorDone").html('<img id="picDone" src="img/Done.png"  width="250" height="250" class="img-responsive" alt="Generic placeholder thumbnail">')
-                buy_contract()
+            //console.log("=====Work with price=====")
+            if (((currentPrice>=min_lim) && (currentPrice<=max_lim))) {
+                $("#logArea").text(Date(serverTime) + " :: Виявив ціну. Починай купувати" + "\n" + $("#logArea").text())  
+                getPrognoz();  
+                
 
             }else{
-                $("#logArea").text(serverTime + " :: cina= " + incomingMessage.tick.quote + "\n" + $("#logArea").text())
+                $("#logArea").text(Date(serverTime) + " :: cina= " + incomingMessage.tick.quote + "\n" + $("#logArea").text())
             }    
         };
 
@@ -121,7 +135,28 @@ function auth () {
 
 
 function getPrognoz () {
-    console.log("prorok Call")
+
+
+    //intervals=0
+    //curent_unix=Math.floor(Date.now()/1000);
+    // curent_time = new Date((curent_unix*1000));
+    //current server time + 5 seconds for create request to buy contract
+    var op=(parseInt(serverTime)+4)*1000;
+    curent_time = new Date(op);
+    //minuts=curent_time.getMinutes();  
+    // intervals=CalcTime(minuts);
+    // duration=5;
+    //planedStart=new Date(curent_time.getFullYear(),curent_time.getMonth(),curent_time.getDate(),curent_time.getHours(),curent_time.getMinutes(),curent_time.getSeconds());
+    //planedEnd=new Date(curent_time.getFullYear(),curent_time.getMonth(),curent_time.getDate(),curent_time.getHours(),intervals);
+    dateStart=(Date.parse(curent_time))/1000;
+    /*console.log("------ start -------")
+    console.log("server time + 4 sec=    " + op)
+    console.log("converted date=    " + curent_time )
+    console.log("dateStart=     " + dateStart)
+    console.log("serverTime=" +     serverTime)*/
+    //dateStart=Math.floor(planedStart);
+    //dateEnd=Math.floor(planedEnd/1000);
+    //console.log("prorok Call")
     var outgoingMessage = JSON.stringify({
         "proposal": 1,
         "amount": amount,
@@ -159,8 +194,8 @@ function SaveParameters () {
     basis= "stake"
     contract_type= contract_type
     currency= "USD"
-    duration= 5
-    duration_unit= "m"
+    duration= $("#duration_value").val()
+    duration_unit= $("#duration_unit").val()
     symbol= $("#symbol").val()
 
     $("#picAmount").attr("src","img/ok.png")
@@ -168,7 +203,7 @@ function SaveParameters () {
 }
 
 function MonitoringPrice () {
-        console.log("start MonitoringPrice function")
+        //console.log("start MonitoringPrice function")
         if (isAuth==0) {
             auth();
         };
@@ -179,7 +214,7 @@ function MonitoringPrice () {
         outgoingMessage1=JSON.stringify({
         
             // "ticks": "frxEURUSD"
-            "ticks": "R_50"
+            "ticks": symbol
         
         });
         socket.send(outgoingMessage1, function ack(error) {
@@ -204,6 +239,8 @@ function StartTrade () {
     };
     tradeStart=1
 
+    $("#prybutokInvestovano").val("0")
+    $("#prybutokPrognozVal").val("0")
 
     $("#cinaZadana").text(price)
     $("#picRunned").attr("src","img/ok.png")
@@ -229,26 +266,17 @@ function StartTrade () {
   }
 
   function buy_contract () {
-        /*if (startbuy==1) {
+        
+        if (startbuy==1) {
             return;
-        };*/
-        startbuy=1
-        intervals=0
-        curent_unix=Math.floor(Date.now()/1000);
-        // curent_time = new Date((curent_unix*1000));
-        //current server time + 5 seconds for create request to buy contract
-        curent_time = new Date((serverTime+5)*1000);
-        minuts=curent_time.getMinutes();  
-        intervals=CalcTime(minuts);
-        duration=5;
-        planedStart=new Date(curent_time.getFullYear(),curent_time.getMonth(),curent_time.getDate(),curent_time.getHours(),curent_time.getMinutes(),curent_time.getSeconds());
-        //planedEnd=new Date(curent_time.getFullYear(),curent_time.getMonth(),curent_time.getDate(),curent_time.getHours(),intervals);
-        dateStart=Math.floor(planedStart/1000);
-        //dateEnd=Math.floor(planedEnd/1000);
-        getPrognoz();
+        };
+        console.log("call buy")
+
+        //getPrognoz();
         buyContractMessage = JSON.stringify({
               "buy": proposalID,
-              "price": 0,
+              //"price": 0,
+              "price": currentPrice,
               "parameters":{
                     "amount": amount,
                     "basis": basis,
@@ -261,8 +289,15 @@ function StartTrade () {
                     "symbol": symbol
               }
             });
-        if (prybutokVidsotok>=75) {            
-            console.log("sent buyContractMessage")
+        if (prybutokVidsotok>=0.75) { 
+            startbuy=1
+            if (monitorEnd===0) {
+                $("#monitorEnd").text("Завершено: " + Date(serverTime))
+                monitorEnd=1
+            };
+            $("#textDone").text("Покупку здійснено! Оновіть сторінку для нового контракту")
+            $("#indicatorDone").html('<img id="picDone" src="img/Done.png"  width="250" height="250" class="img-responsive" alt="Generic placeholder thumbnail">')         
+            alert("ГОТОВО! Можете переглянути деталі роботи")
             /*socket.send(buyContractMessage, function ack(error) {
                   showMessage("ERROR===" + incomingMessage + "===== " + error); 
                 });*/
