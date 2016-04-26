@@ -150,28 +150,30 @@ function getPrognoz () {
     //current server time + 5 seconds for create request to buy contract
     var op=(parseInt(serverTime)+4)*1000;
     curent_time = new Date(op);
-    minuts=curent_time.getMinutes();  
-    intervals=CalcTime(minuts);
-    if (duration!=0) {
-        switch (duration_unit){
-            case 's':
-                intervals=intervals*(duration/60);
-                break;
-            case 'm': 
-                intervals=intervals*duration;
-                break;
-            case 'h':
-                intervals=intervals*(duration*60);
-                break;
-            default:
-                break;
-        }
-    };
+    // minuts=curent_time.getMinutes();  
+    // intervals=CalcTime(minuts);
+    // if (duration!=0) {
+    //     switch (duration_unit){
+    //         case 's':
+    //             intervals=intervals*(duration/60);
+    //             break;
+    //         case 'm': 
+    //             intervals=intervals*duration;
+    //             break;
+    //         case 'h':
+    //             intervals=intervals*(duration*60);
+    //             break;
+    //         default:
+    //             break;
+    //     }
+    // };
     // duration=5;
     //planedStart=new Date(curent_time.getFullYear(),curent_time.getMonth(),curent_time.getDate(),curent_time.getHours(),curent_time.getMinutes(),curent_time.getSeconds());
-    planedEnd=new Date(curent_time.getFullYear(),curent_time.getMonth(),curent_time.getDate(),curent_time.getHours(),intervals);
+    // planedEnd=new Date(curent_time.getFullYear(),curent_time.getMonth(),curent_time.getDate(),curent_time.getHours(),intervals);
     dateStart=(Date.parse(curent_time))/1000;
-    dateEnd=(Date.parse(planedEnd))/1000;
+    // dateEnd=(Date.parse(planedEnd))/1000;
+    dateEnd=(Date.parse($("#date_expire").val()))/1000;
+    
     // console.log("------ start -------")
     // console.log("server time + 4 sec=    " + op)
     // console.log("converted date=    " + curent_time )
@@ -371,6 +373,7 @@ $( document ).ready(function() {
         StartTrade()
     })
 
+    $("#date_expire").val(new Date())
 
     console.log( "ready!" );
 });
